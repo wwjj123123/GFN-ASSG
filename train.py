@@ -17,19 +17,8 @@ from sklearn import metrics
 from time import strftime, localtime
 from torch.utils.data import DataLoader
 from transformers import BertModel, AdamW
-from models.ian import IAN
-from models.atae_lstm import ATAE_LSTM
-from models.syngcn import SynGCNClassifier
-from models.semgcn import SemGCNClassifier
-from models.dualgcn import DualGCNClassifier
-from models.dualgcn_bert import DualGCNBertClassifier
-from models.no_aspDis_gcn import NoAspDisGCNClassifier
-from models.no_posAtten_gcn import NoPosAttenGCNClassifier
-from models.no_posAtten_gcn_bert import NoPosAttenGCNBertClassifier
-from models.dapgcn import DAPGCNClassifier
 from models.dapgcn_bert import DAPGCNBertClassifier
 
-from models.triplegcn import TripleGCNClassifier
 
 from data_utils import SentenceDataset, build_tokenizer, build_embedding_matrix, Tokenizer4BertGCN, ABSAGCNData
 from prepare_vocab import VocabHelp
@@ -290,19 +279,12 @@ class Instructor:
                     if test_acc > max_test_acc or (abs(test_acc - max_test_acc) < 0.0000000001 and f1>max_f1):
                         max_test_acc = test_acc
                         if test_acc > max_test_acc_overall:
-                            if not os.path.exists('./DualGCN/state_dict_correct_prompt_newDmin_softmax'):
-                                os.mkdir('./DualGCN/state_dict_correct_prompt_newDmin_softmax')
-                            model_path = './DualGCN/state_dict_correct_prompt_newDmin_softmax/{}_{}_acc_{:.4f}_f1_{:.4f}'.format(self.opt.model_name, self.opt.dataset, test_acc, f1)
+                            if not os.path.exists('./GCN/state_dict_correct_prompt_newDmin_softmax'):
+                                os.mkdir('./GCN/state_dict_correct_prompt_newDmin_softmax')
+                            model_path = './GCN/state_dict_correct_prompt_newDmin_softmax/{}_{}_acc_{:.4f}_f1_{:.4f}'.format(self.opt.model_name, self.opt.dataset, test_acc, f1)
                             self.best_model = copy.deepcopy(self.model)
                             logger.info('>> saved: {}'.format(model_path))
                             print('>> saved: {}'.format(model_path))
-                    # if f1 >0.7563 and f1<0.758:
-                    #     if not os.path.exists('./DualGCN/state_dict_correct'):
-                    #         os.mkdir('./DualGCN/state_dict_correct')
-                    #     model_path = './DualGCN/state_dict_correct/{}_{}_acc_{:.4f}_f1_{:.4f}'.format(self.opt.model_name, self.opt.dataset, test_acc, f1)
-                    #     self.best_model = copy.deepcopy(self.model)
-                    #     logger.info('>> saved: {}'.format(model_path))
-                    #     print('>> saved: {}'.format(model_path))
                     # 查看此时的alpha
                     if self.opt.model_name == 'no_aspDis_gcn' or self.opt.model_name == 'dapgcn':
                         alpha_value = self.model.gcn_model.gcn.alpha.item()  # 获取 alpha 的值
@@ -393,62 +375,37 @@ class Instructor:
 
 def main():
     model_classes = {
-        'atae_lstm': ATAE_LSTM,
-        'ian': IAN,
-        'syngcn': SynGCNClassifier,
-        'semgcn': SemGCNClassifier,
-        'dualgcn': DualGCNClassifier,
-        'dualgcn_bert': DualGCNBertClassifier,
-        'no_posAtten_gcn': NoPosAttenGCNClassifier,
-        'no_aspDis_gcn': NoAspDisGCNClassifier,
-        'dapgcn': DAPGCNClassifier,
-        'no_posAtten_gcn_bert': NoPosAttenGCNBertClassifier,
-        'dapgcn_bert': DAPGCNBertClassifier,
-        'triplegcn': TripleGCNClassifier
+        'dapgcn_bert': DAPGCNBertClassifier
         
     }
     
     dataset_files = {
         'restaurant': {
-            'train': './DualGCN/dataset/Restaurants_corenlp/train.json',
-            'test': './DualGCN/dataset/Restaurants_corenlp/test.json',
+            'train': './GCN/dataset/Restaurants_corenlp/train.json',
+            'test': './GCN/dataset/Restaurants_corenlp/test.json',
         },
         'laptop': {
-            'train': './DualGCN/dataset/Laptops_corenlp/train.json',
-            'test': './DualGCN/dataset/Laptops_corenlp/test.json'
-        },
-        'twitter': {
-            'train': './DualGCN/dataset/Tweets_corenlp/train.json',
-            'test': './DualGCN/dataset/Tweets_corenlp/test.json',
+            'train': './GCN/dataset/Laptops_corenlp/train.json',
+            'test': './GCN/dataset/Laptops_corenlp/test.json'
         },
         'twitter2015': {
-            'train': './DualGCN/dataset/Twitter2015_corenlp/train.json',
-            'test': './DualGCN/dataset/Twitter2015_corenlp/test.json',
+            'train': './GCN/dataset/Twitter2015_corenlp/train.json',
+            'test': './GCN/dataset/Twitter2015_corenlp/test.json',
         },
         'twitter2017': {
-            'train': './DualGCN/dataset/Twitter2017_corenlp/train.json',
-            'test': './DualGCN/dataset/Twitter2017_corenlp/test.json',
+            'train': './GCN/dataset/Twitter2017_corenlp/train.json',
+            'test': './GCN/dataset/Twitter2017_corenlp/test.json',
         },
         'MAMS': {
-            'train': './DualGCN/dataset/MAMS/train.json',
-            'test': './DualGCN/dataset/MAMS/test.json',
+            'train': './GCN/dataset/MAMS/train.json',
+            'test': './GCN/dataset/MAMS/test.json',
         }
     }
     
     input_colses = {
-        'atae_lstm': ['text', 'aspect'],
-        'ian': ['text', 'aspect'],
-        'syngcn': ['text', 'aspect', 'pos', 'head', 'deprel', 'post', 'mask', 'length', 'adj'],
-        'semgcn': ['text', 'aspect', 'pos', 'head', 'deprel', 'post', 'mask', 'length'],
-        'dualgcn': ['text', 'aspect', 'pos', 'head', 'deprel', 'post', 'mask', 'length', 'adj', 'asp_index', 'polarity'],
-        'dualgcn_bert': ['text_bert_indices', 'bert_segments_ids', 'attention_mask', 'asp_start', 'asp_end', 'adj_matrix', 'src_mask', 'aspect_mask'],
-        'no_posAtten_gcn_bert': ['text_bert_indices', 'bert_segments_ids', 'attention_mask', 'asp_start', 'asp_end', 'adj_matrix', 'D_min', 'src_mask', 'aspect_mask'],
+        
         'dapgcn_bert': ['text_bert_indices', 'bert_segments_ids', 'attention_mask', 'asp_start', 'asp_end', 'adj_matrix', 'D_min','M_pos', 'src_mask', 'aspect_mask','aspect_mask2','com_aspect_mask', 'mask_position', 'sentence_id'], # 
 
-        'no_posAtten_gcn': ['text', 'aspect', 'pos', 'head', 'deprel', 'post', 'mask', 'length', 'adj', 'pos_obj_vocab', 'ped_post', 'asp_index', 'polarity'],
-        'triplegcn': ['text', 'aspect', 'pos', 'head', 'deprel', 'post', 'mask', 'length', 'adj', 'pos_obj_vocab', 'ped_post', 'asp_index', 'polarity'],
-        'no_aspDis_gcn': ['text', 'aspect', 'pos', 'head', 'deprel', 'post', 'mask', 'length', 'adj', 'pos_obj_vocab', 'ped_post', 'asp_index','polarity'],
-        'dapgcn': ['text', 'aspect', 'pos', 'head', 'deprel', 'post', 'mask', 'length', 'adj', 'pos_obj_vocab', 'ped_post', 'asp_index','polarity']
 
     }
     
@@ -470,7 +427,7 @@ def main():
     
     # Hyperparameters
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_name', default='dualgcn', type=str, help=', '.join(model_classes.keys()))
+    parser.add_argument('--model_name', default='dapgcn_bert', type=str, help=', '.join(model_classes.keys()))
     parser.add_argument('--dataset', default='laptop', type=str, help=', '.join(dataset_files.keys()))
    
     parser.add_argument('--pretrained_model_path', default=None, type=str, help="Path to the pretrained model (.pt file)")
@@ -505,7 +462,7 @@ def main():
     parser.add_argument('--device', default=None, type=str, help='cpu, cuda')
     parser.add_argument('--seed', default=0, type=int)
     parser.add_argument("--weight_decay", default=0.0, type=float, help="Weight deay if we apply some.")
-    parser.add_argument('--vocab_dir', type=str, default='./DualGCN/dataset/Laptops_corenlp')
+    parser.add_argument('--vocab_dir', type=str, default='./dataset/Laptops_corenlp')
     parser.add_argument('--pad_id', default=0, type=int)
     parser.add_argument('--parseadj', default=False, action='store_true', help='dependency probability')
     parser.add_argument('--parsehead', default=False, action='store_true', help='dependency tree')
@@ -515,7 +472,7 @@ def main():
     parser.add_argument('--beta', default=0.25, type=float)
     
     # * bert
-    parser.add_argument('--pretrained_bert_name', default='/home/liugaofei/wyj/DualGCN-ABSA-main3/LAL-Parser/src_joint/bert-base-uncased', type=str)
+    parser.add_argument('--pretrained_bert_name', default='./LAL-Parser/src_joint/bert-base-uncased', type=str)
     parser.add_argument("--adam_epsilon", default=1e-8, type=float, help="Epsilon for Adam optimizer.")
     parser.add_argument('--bert_dim', type=int, default=768)
     parser.add_argument('--bert_dropout', type=float, default=0.3, help='BERT dropout rate.')
@@ -541,10 +498,10 @@ def main():
     # set random seed
     setup_seed(opt.seed)
 
-    if not os.path.exists('./DualGCN/log'):
-        os.makedirs('./DualGCN/log', mode=0o777)
+    if not os.path.exists('./GCN/log'):
+        os.makedirs('./GCN/log', mode=0o777)
     log_file = '{}-{}-{}.log'.format(opt.model_name, opt.dataset, strftime("%Y-%m-%d_%H:%M:%S", localtime()))
-    logger.addHandler(logging.FileHandler("%s/%s" % ('./DualGCN/log', log_file)))
+    logger.addHandler(logging.FileHandler("%s/%s" % ('./GCN/log', log_file)))
 
     ins = Instructor(opt)
     ins.run()
